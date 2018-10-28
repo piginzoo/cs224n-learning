@@ -13,14 +13,16 @@ def sigmoid(x):
     Return:
     s -- sigmoid(x)
     """
+    print 'data:'
+    print x
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+    s = 1/(1+np.exp(-x))
     ### END YOUR CODE
 
     return s
 
-
+#sigmod 's gradient value is y*(1-y)
 def sigmoid_grad(s):
     """
     Compute the gradient for the sigmoid function here. Note that
@@ -35,8 +37,9 @@ def sigmoid_grad(s):
     """
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+    #raise NotImplementedError
     ### END YOUR CODE
+    ds = s * (1-s)
 
     return ds
 
@@ -72,7 +75,7 @@ def test_sigmoid():
     """
     print "Running your tests..."
     ### YOUR CODE HERE
-    raise NotImplementedError
+    #raise NotImplementedError
     ### END YOUR CODE
 
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+#encoding=utf-8
 import numpy as np
 import random
 
@@ -40,11 +40,21 @@ def forward_backward_prop(X, labels, params, dimensions):
 
     # Note: compute cost based on `sum` not `mean`.
     ### YOUR CODE HERE: forward propagation
-    raise NotImplementedError
+    _H = np.dot(X * W1 + b1)
+    H = sigmoid(_H)
+    _Y = np.dot(H * W2 + b2)
+    Y = softmax(_Y)
+    cost = (-1) * np.sum( labels * np.log(Y))
     ### END YOUR CODE
 
     ### YOUR CODE HERE: backward propagation
-    raise NotImplementedError
+    #https://zhuanlan.zhihu.com/p/25723112
+    #softmax梯度是对应1的位置 - 1即可
+    #再参考这篇：得到w，b的公式 : https://blog.csdn.net/Jaster_wisdom/article/details/78379697
+    gradW2 = (Y - labels)* Y
+    gradb2 = Y - labels
+    gradW1 = np.dot(Y - labels, W2) * H * (1-H) * X
+    gradb1 = np.dot(Y - labels, W2) * H * (1-H)
     ### END YOUR CODE
 
     ### Stack gradients (do not modify)
@@ -62,14 +72,16 @@ def sanity_check():
     print "Running sanity check..."
 
     N = 20
-    dimensions = [10, 5, 10]
+    dimensions = [10, 5, 10]#输入层维度|银行层维度|输出层维度
     data = np.random.randn(N, dimensions[0])   # each row will be a datum
     labels = np.zeros((N, dimensions[2]))
     for i in xrange(N):
         labels[i, random.randint(0,dimensions[2]-1)] = 1
 
+    #参数是一维数组: | W1 | B1| W2 | B2  |   
     params = np.random.randn((dimensions[0] + 1) * dimensions[1] + (
         dimensions[1] + 1) * dimensions[2], )
+    print "参数shape=",params.shape
 
     gradcheck_naive(lambda params:
         forward_backward_prop(data, labels, params, dimensions), params)
