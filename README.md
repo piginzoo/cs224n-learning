@@ -31,4 +31,25 @@ wordVectors = sgd(
     wordVectors, #词向量矩阵，别忘是2个词表矩阵合成的（2D * V）
 
 ```
-这种lambda写法很诡异，为此我专门写了一个
+这种lambda写法很诡异，为此我专门写了一个 [test_lambda.py](https://github.com/piginzoo/cs224n-learning/blob/master/assignment1/test/test_lambda.py),来捋清楚这个。
+其实核心就是为了让核心参数wordVectors晚点绑定到函数里而已。
+
+[q3_sgd.py](https://github.com/piginzoo/cs224n-learning/blob/master/assignment1/q3_sgd.py)
+然后sgd()方法没干啥，就是触发了word2vec_sgd_wrapper而已，然后word2vec_sgd_wrapper里面调用了skigram，skigram里面调用了negSamplingCostAndGradient。大致这么一个调用链。
+
+```sgd()->word2vec_sgd_wrapper()->skimgram()->negSamplingCostAndGradient()```
+
+[q3_word2vec.py](https://github.com/piginzoo/cs224n-learning/blob/master/assignment1/q3_word2vec.py#1)
+先看看word2vec_sgd_wrapper：
+- 没有遍历整个语料，而是随机去找一个词，然后用它来形成一个窗口来做预测，这个玩法很诡异
+- 然后他调用word2vecModel(),其实就是skimgram()
+
+然后看看skipgram:
+- 对每个上下文词进行处理，调用word2vecCostAndGradient，其实就是negSamplingCostAndGradient
+- 针对的是一个词，一个中心词，一个上下文词
+
+然后看看negSamplingCostAndGradient:
+- 这个类很很核心，其中的梯度公式很重要，要[参考](https://github.com/piginzoo/cs224n-learning/blob/master/solution/assignment1%20(1.1%2C1.2%2C1.3%2C1.4)/assignment1_soln.pdf) 3.word2vec (c)
+- 3(c)中关于v_c, u_o, u_w的梯度公式很重要，这些就是词向量矩阵的U,V的待定系数呀
+	
+
