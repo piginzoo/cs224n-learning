@@ -71,6 +71,7 @@ def softmaxCostAndGradient(predicted, target, outputVectors, dataset):
     #  Calculate the predictions:
     vhat = predicted #输入，就是要预测的词，一个词表V长度的一个向量，很长
     #z是啥？
+    #outputVectors是一个矩阵，vhat是
     z = np.dot(outputVectors, vhat)#outputVector就是W'，就是输入词向量要乘以的那个矩阵
     preds = softmax(z)#z是得到一个W' * v_c，是一个词表大小的向量，但未归一化，需要归一化
                       #然后用softmax将其归一化，得到一个归一化的预测向量，
@@ -80,9 +81,11 @@ def softmaxCostAndGradient(predicted, target, outputVectors, dataset):
     cost = -np.log(preds[target])#交叉熵
 
     #  Gradients
+    #参考：https://github.com/piginzoo/cs224n-learning/blob/master/solution/assignment1%20(1.1%2C1.2%2C1.3%2C1.4)/assignment1_soln.pdf
     z = preds.copy()
     z[target] -= 1.0#计算梯度，是对z是
 
+    #outer计算是算一个矩阵，
     grad = np.outer(z, vhat) #这步实现 vhat * (z - 1)
     gradPred = np.dot(outputVectors.T, z) 
     ### END YOUR CODE
@@ -101,9 +104,20 @@ def getNegativeSamples(target, dataset, K):
         indices[k] = newidx
     return indices
 
-
-def negSamplingCostAndGradient(predicted, target, outputVectors, dataset,
-                               K=10):
+'''
+在skimgram中会真正调用他：
+word2vecCostAndGradient(
+    vhat, #中心词的那个词向量
+    u_idx,#其他的上下文词的在词表中的位置index，后面会用来找到他对应的词向量 ，是一个整数值
+    outputVectors, #输出矩阵
+    dataset)#数据集
+'''
+def negSamplingCostAndGradient(
+    predicted, #被预测向量,就是v_c: http://www.hankcs.com/nlp/word-vector-representations-word2vec.html
+    target, #上下文词的索引，起名叫target我觉得是指对应要预测他们,就是 u_i
+    outputVectors, #输出矩阵，也就是老师讲的W'
+    dataset,
+    K=10):#K??我没看呢，现在理解是采样负样本的个数？，对，靠，下面写着呢： K is the sample size.
     """ Negative sampling cost function for word2vec models
 
     Implement the cost and gradients for one predicted word vector
@@ -118,19 +132,26 @@ def negSamplingCostAndGradient(predicted, target, outputVectors, dataset,
 
     # Sampling of indices is done for you. Do not modify this if you
     # wish to match the autograder and receive points!
-    indices = [target]
+    indices = [target]#为何又加了个括弧了？？？[3]的感觉了？
+    #这个肯定是之前的10个正样本+了10个负样本
     indices.extend(getNegativeSamples(target, dataset, K))
 
     ### YOUR CODE HERE
     grad = np.zeros(outputVectors.shape)
     gradPred = np.zeros(predicted.shape)
     cost = 0
+    #就是 sigmod(中心词 * 上下文词),z得到一个概率
     z = sigmoid(np.dot(outputVectors[target], predicted))
 
-    cost -= np.log(z)
-    grad[target] += predicted * (z - 1.0)
+    cost -= np.log(z) #这个好理解，就是交叉熵，别的都为0，就这个维度为1： -p*logq, p现在是1，q现在是z
+    
+    #这个梯度是对u_0（正确的分类的那个词）的梯度，也就是outputVectors里面参数的梯度
+    #这个是经过3.c中的采样梯度公式，具体参考这个文档的 3(c)
+    #https://github.com/piginzoo/cs224n-learning/blob/master/solution/assignment1%20(1.1%2C1.2%2C1.3%2C1.4)/assignment1_soln.pdf
+    grad[target] += predicted * (z - 1.0) #predicted就是v_c center word，中心词
+    #这个是对v_c(中心词)的梯度       
     gradPred += outputVectors[target] * (z - 1.0)
-
+    #这个是算负样例的梯度，实际上是u_k（负样例）
     for k in xrange(K):
         samp = dataset.sampleTokenIdx()
         z = sigmoid(np.dot(outputVectors[samp], predicted))
@@ -172,12 +193,16 @@ def skipgram(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
 
     ### YOUR CODE HERE
     cword_idx = tokens[currentWord]
-    vhat = inputVectors[cword_idx]
+    vhat = inputVectors[cword_idx]#找到中心词对应的D维词向量
 
-    for j in contextWords:
+    for j in contextWords:#然后对每一个包围这个中心词的上下文词
         u_idx = tokens[j]
         c_cost, c_grad_in, c_grad_out = \
-            word2vecCostAndGradient(vhat, u_idx, outputVectors, dataset)
+            word2vecCostAndGradient(
+                vhat, #中心词的那个词向量
+                u_idx,#其他的上下文词的在词表中的位置index，后面会用来找到他对应的词向量 
+                outputVectors, #输出矩阵
+                dataset)#数据集
         cost += c_cost
         gradIn[cword_idx] += c_grad_in
         gradOut += c_grad_out
@@ -219,17 +244,31 @@ def cbow(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
 #############################################
 # Testing functions below. DO NOT MODIFY!   #
 #############################################
-
+#C是窗口大小，默认是5，5-1-5
+#word2vecModel：skimgram算法函数
+#tokens：词表
+#wordvectors
 def word2vec_sgd_wrapper(word2vecModel, tokens, wordVectors, dataset, C,
                          word2vecCostAndGradient=softmaxCostAndGradient):
     batchsize = 50
     cost = 0.0
-    grad = np.zeros(wordVectors.shape)
-    N = wordVectors.shape[0]
-    inputVectors = wordVectors[:N / 2, :]
-    outputVectors = wordVectors[N / 2:, :]
-    for i in xrange(batchsize):
+    grad = np.zeros(wordVectors.shape)#2D*V的词表矩阵全部初始化为0
+    N = wordVectors.shape[0]#词表长度
+    inputVectors = wordVectors[:N / 2, :]#[行:列]，前N行，是输入矩阵
+    outputVectors = wordVectors[N / 2:, :]#后N行，是输出矩阵
+    for i in xrange(batchsize):#一个batch 50次
         C1 = random.randint(1, C)
+        #这句话很诡异，实际上如果去看utils/treebank.py:95的getRandomeContext函数
+        '''
+        allsent = self.allSentences()
+        sentID = random.randint(0, len(allsent) - 1)<-----全局随机数
+        sent = allsent[sentID]
+        wordID = random.randint(0, len(sent) - 1)
+        context = sent[max(0, wordID - C):wordID]        
+        '''
+        #看到了把，实际上是在全局随机捕捉目标文字
+        #我还奇怪呢？怎么也看不到一个遍历整个语料的方式来训练呢？原来是在这里呢
+        #所以他们用mini-batch就是50个凑一波，然后做GD
         centerword, context = dataset.getRandomContext(C1)
 
         if word2vecModel == skipgram:
@@ -237,9 +276,16 @@ def word2vec_sgd_wrapper(word2vecModel, tokens, wordVectors, dataset, C,
         else:
             denom = 1
 
-        c, gin, gout = word2vecModel(
-            centerword, C1, context, tokens, inputVectors, outputVectors,
-            dataset, word2vecCostAndGradient)
+        c, gin, gout = word2vecModel(#<------就是skimgram函数
+            centerword, #中心词
+            C1, #窗口大小
+            context, #这个窗口中的词
+            tokens, #整个语料
+            inputVectors, #输入矩阵
+            outputVectors,#输出矩阵
+            dataset, #整个语料，不知道还要这个玩意干嘛？
+            word2vecCostAndGradient)#虽然默认是softmax哈夫曼实现，实际上后来传进来了负采样实现，
+                                    #也就是negSamplingCostAndGradient
         cost += c / batchsize / denom
         grad[:N / 2, :] += gin / batchsize / denom
         grad[N / 2:, :] += gout / batchsize / denom

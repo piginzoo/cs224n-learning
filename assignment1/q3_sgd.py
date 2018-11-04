@@ -85,7 +85,27 @@ def sgd(f, x0, step, iterations, postprocessing=None, useSaved=False,
 
         cost = None
         ### YOUR CODE HERE
-        raise NotImplementedError
+        print('x=' % str(x))
+        #调用f:word2vec_sgd_wrapper
+        #在这里看上去就一个参数x，
+        #其实早已传入了一堆的参数，
+        #参考q3_run.py 37行
+        '''
+        wordVectors = sgd(
+            lambda vec: word2vec_sgd_wrapper(
+                skipgram, #skipgram算法的函数指针
+                tokens, #词表
+                vec, #每行的词向量？还是每一列？干嘛？？？
+                dataset, 
+                C,
+                negSamplingCostAndGradient),#负采样的时候的梯度？
+            wordVectors, #词向量矩阵，别忘是2个词表矩阵合成的（2D * V）
+        '''
+        #这里的x，只是vec参数而已，即wordVectors，词向量矩阵，2D*V维度的
+        cost, grad = f(x)
+        x -= step * grad
+        postprocessing(x)
+
         ### END YOUR CODE
 
         if iter % PRINT_EVERY == 0:
