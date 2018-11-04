@@ -13,7 +13,9 @@ assiment1/q1_xxx 和 q2_xxx
 
 # 作业2 第二周
 assiment1/q3_xxx
-首先要说，这个笔记很重要：https://github.com/piginzoo/cs224n-learning/blob/master/solution/assignment1%20(1.1%2C1.2%2C1.3%2C1.4)/assignment1_soln.pdf
+
+## 使用了哪些材料：
+首先要说，这个[作业辅助笔记](https://github.com/piginzoo/cs224n-learning/blob/master/solution/assignment1%20(1.1%2C1.2%2C1.3%2C1.4)/assignment1_soln.pdf),其次是网上流传的那篇著名的《word2vec数学原理》，再有就是视频课程了。
 
 这个是作业的帮助，我其实没有写代码，真心写不出来，完全没思路呢，课还听得一知半解呢。
 后来从网上发现老师发的课件里居然有代码，很高兴，认真阅读了一下。
