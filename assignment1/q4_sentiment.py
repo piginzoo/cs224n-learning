@@ -3,6 +3,7 @@
 import argparse
 import numpy as np
 import matplotlib
+
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import itertools
@@ -49,7 +50,10 @@ def getSentenceFeatures(tokens, wordVectors, sentence):
     sentVector = np.zeros((wordVectors.shape[1],))
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+    for s in sentence:
+        sentVector += wordVectors[tokens[s], :]
+
+    sentVector *= 1.0 / len(sentence)
     ### END YOUR CODE
 
     assert sentVector.shape == (wordVectors.shape[1],)
@@ -61,15 +65,15 @@ def getRegularizationValues():
 
     Return a sorted list of values to try.
     """
-    values = None   # Assign a list of floats in the block below
+    values = None  # Assign a list of floats in the block below
     ### YOUR CODE HERE
-    raise NotImplementedError
+    values = np.logspace(-4, 2, num=100, base=10)
     ### END YOUR CODE
     return sorted(values)
 
 
 def chooseBestModel(results):
-    """Choose the best model based on dev set performance.
+    """Choose the best model based on parameter tuning on the dev set
 
     Arguments:
     results -- A list of python dictionaries of the following format:
@@ -81,15 +85,13 @@ def chooseBestModel(results):
             "test": testAccuracy
         }
 
-    Each dictionary represents the performance of one model.
-
     Returns:
     Your chosen result dictionary.
     """
     bestResult = None
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+    bestResult = max(results, key=lambda x: x["dev"])
     ### END YOUR CODE
 
     return bestResult
@@ -97,7 +99,7 @@ def chooseBestModel(results):
 
 def accuracy(y, yhat):
     """ Precision for classifier """
-    assert(y.shape == yhat.shape)
+    assert (y.shape == yhat.shape)
     return np.sum(y == yhat) * 100.0 / y.size
 
 
@@ -155,7 +157,7 @@ def main(args):
     if args.yourvectors:
         _, wordVectors, _ = load_saved_params()
         wordVectors = np.concatenate(
-            (wordVectors[:nWords,:], wordVectors[nWords:,:]),
+            (wordVectors[:nWords, :], wordVectors[nWords:, :]),
             axis=1)
     elif args.pretrained:
         wordVectors = glove.loadWordVectors(tokens)
@@ -194,7 +196,7 @@ def main(args):
     for reg in regValues:
         print "Training for reg=%f" % reg
         # Note: add a very small number to regularization to please the library
-        clf = LogisticRegression(C=1.0/(reg + 1e-12))
+        clf = LogisticRegression(C=1.0 / (reg + 1e-12))
         clf.fit(trainFeatures, trainLabels)
 
         # Test on train set
